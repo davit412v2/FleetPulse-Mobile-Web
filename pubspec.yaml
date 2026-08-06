@@ -49,6 +49,9 @@ dependencies:
   signalr_netcore: ^1.4.4
   geolocator: ^14.0.3
 
+  #charts
+  syncfusion_flutter_charts: ^34.1.32
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

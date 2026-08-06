@@ -29,7 +29,7 @@ final recentTelemetryProvider = FutureProvider<List<TelemetryModel>>((ref) async
 final telemetryByVehicleProvider = FutureProvider.family<List<TelemetryModel>, String>(
   (ref, vehicleId) async {
     final repository = ref.watch(telemetryRepositoryProvider);
-    final result = await repository.getTelemetryByVehicle(vehicleId, limit: 100);
+    final result = await repository.getTelemetryByVehicle(vehicleId, limit: 20);
     
     if (result.isSuccess) {
       return result.dataOrNull!;
