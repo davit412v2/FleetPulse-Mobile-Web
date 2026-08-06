@@ -95,7 +95,7 @@ class HomePage extends ConsumerWidget {
                 context,
                 MaterialPageRoute(builder: (_) => const DashboardPage()),
               ),
-              isDisabled: false, // CAMBIAR DE true A false
+              isDisabled: false, 
             ),
 
             // Opción Master Data
@@ -123,7 +123,7 @@ class HomePage extends ConsumerWidget {
                 context,
                 MaterialPageRoute(builder: (_) => const TelemetryListPage()),
               ),
-              isDisabled: false, // CAMBIAR DE true A false
+              isDisabled: false, 
             ),
           ],
         ),

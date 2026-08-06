@@ -1,8 +1,8 @@
-import 'dart:async';
 import 'package:fleet_pulse/core/websocket/websocket_provider.dart';
-import 'package:fleet_pulse/features/dashboard/presentation/widgets/vehicle_history_charts.dart';
+import 'package:fleet_pulse/features/alert/widgets/alert_notification_bell.dart';
+import 'package:fleet_pulse/features/dashboard/presentation/widgets/vehicle_details_panel.dart';
+import 'package:fleet_pulse/features/dashboard/provider/dashboard_notifier.dart';
 import 'package:fleet_pulse/features/telemetry/models/telemetry_model.dart';
-import 'package:fleet_pulse/features/telemetry/providers/telemetry_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -17,11 +17,7 @@ class DashboardPage extends ConsumerStatefulWidget {
 
 class _DashboardPageState extends ConsumerState<DashboardPage> {
   GoogleMapController? _mapController;
-  final Map<String, Marker> _markers = {};
-  final Map<String, TelemetryModel> _latestTelemetry = {};
   BitmapDescriptor? _vehicleIcon;
-  bool _showVehicleHistory = false;
-  final List<TelemetryModel> historyTelemetry = [];
 
   static const LatLng _center = LatLng(4.6097, -74.0817);
 
@@ -29,7 +25,6 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
   void initState() {
     super.initState();
     _loadMarkerIcon();
-    _listenToTelemetryStream();
   }
 
   Future<void> _loadMarkerIcon() async {
@@ -37,153 +32,27 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
       const ImageConfiguration(size: Size(32, 32)),
       'assets/images/truck.png',
     );
-  }
-
-  void _listenToTelemetryStream() {
-    ref.listenManual(telemetryStreamProvider, (previous, next) {
-      next.whenData((telemetry) {
-        _updateMarker(telemetry);
-      });
-    });
-  }
-
-  void _updateMarker(TelemetryModel telemetry) {
-    setState(() {
-      _latestTelemetry[telemetry.vehicleId] = telemetry;
-
-      final marker = Marker(
-        markerId: MarkerId(telemetry.vehicleId),
-        position: LatLng(telemetry.latitude, telemetry.longitude),
-        icon:
-            _vehicleIcon ??
-            BitmapDescriptor.defaultMarkerWithHue(
-              _getMarkerColor(telemetry.speed),
-            ),
-        infoWindow: InfoWindow(
-          title: telemetry.vehiclePlate,
-          snippet:
-              '${telemetry.speed.toStringAsFixed(1)} km/h | ${telemetry.fuelLevel.toStringAsFixed(0)} L',
-        ),
-        onTap: () => _showTelemetryDetails(telemetry),
-      );
-
-      _markers[telemetry.vehicleId] = marker;
-    });
-  }
-
-  double _getMarkerColor(double speed) {
-    if (speed < 30) return BitmapDescriptor.hueGreen;
-    if (speed < 60) return BitmapDescriptor.hueOrange;
-    return BitmapDescriptor.hueRed;
-  }
-
-  void _showTelemetryDetails(TelemetryModel telemetry) {
-    var telemetryProvider = ref.read(
-      telemetryByVehicleProvider(telemetry.vehicleId).future,
-    );
-
-    historyTelemetry.clear();
-    telemetryProvider
-        .then((data) {
-          setState(() {
-            historyTelemetry.addAll(data);
-            _showVehicleHistory = true;
-          });
-        })
-        .catchError((error) {
-          setState(() {
-            _showVehicleHistory = false;
-          });
-        });
-
-    // showModalBottomSheet(
-    //   context: context,
-    //   builder: (context) => Container(
-    //     padding: const EdgeInsets.all(20),
-    //     child: Column(
-    //       mainAxisSize: MainAxisSize.min,
-    //       crossAxisAlignment: CrossAxisAlignment.start,
-    //       children: [
-    //         Row(
-    //           children: [
-    //             const Icon(Icons.local_shipping, size: 32, color: Color(0xFF0175C2)),
-    //             const SizedBox(width: 12),
-    //             Text(
-    //               telemetry.vehiclePlate,
-    //               style: Theme.of(context).textTheme.headlineSmall,
-    //             ),
-    //           ],
-    //         ),
-    //         const Divider(height: 24),
-    //         _buildDetailRow(Icons.speed, 'Velocidad', '${telemetry.speed.toStringAsFixed(1)} km/h'),
-    //         _buildDetailRow(Icons.local_gas_station, 'Combustible', '${telemetry.fuelLevel.toStringAsFixed(1)} L'),
-    //         _buildDetailRow(Icons.thermostat, 'Temperatura', '${telemetry.temperature.toStringAsFixed(1)} °C'),
-    //         _buildDetailRow(Icons.location_on, 'Coordenadas', '${telemetry.latitude.toStringAsFixed(5)}, ${telemetry.longitude.toStringAsFixed(5)}'),
-    //         if (telemetry.routeName != null)
-    //           _buildDetailRow(Icons.route, 'Ruta', telemetry.routeName!),
-    //       ],
-    //     ),
-    //   ),
-    // );
-  }
-
-  Widget _buildDetailRow(IconData icon, String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        children: [
-          Icon(icon, size: 20, color: Colors.grey[600]),
-          const SizedBox(width: 12),
-          Text('$label: ', style: const TextStyle(fontWeight: FontWeight.bold)),
-          Expanded(
-            child: Text(value, style: const TextStyle(color: Colors.grey)),
-          ),
-        ],
-      ),
-    );
+    if (mounted) setState(() {});
   }
 
   @override
   Widget build(BuildContext context) {
     final connectionState = ref.watch(connectionStateProvider);
+    final dashboardState = ref.watch(dashboardNotifierProvider);
+    final dashboardNotifier = ref.read(dashboardNotifierProvider.notifier);
+
+    final markers = _buildMarkers(
+      dashboardState.latestTelemetry,
+      dashboardNotifier,
+    );
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Dashboard - Monitoreo en Tiempo Real'),
         actions: [
-          connectionState.when(
-            data: (state) => Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Row(
-                children: [
-                  Icon(
-                    state == HubConnectionState.Connected
-                        ? Icons.wifi
-                        : Icons.wifi_off,
-                    color: state == HubConnectionState.Connected
-                        ? Colors.green
-                        : Colors.red,
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    state == HubConnectionState.Connected
-                        ? 'En vivo'
-                        : 'Desconectado',
-                    style: const TextStyle(fontSize: 12),
-                  ),
-                ],
-              ),
-            ),
-            loading: () => const Padding(
-              padding: EdgeInsets.all(8.0),
-              child: SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              ),
-            ),
-            error: (_, __) => const Icon(Icons.error, color: Colors.red),
-          ),
+          const AlertNotificationBell(),
+          const SizedBox(width: 8),
+          _buildConnectionStatus(connectionState),
         ],
       ),
       body: Column(
@@ -197,62 +66,160 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                 _buildStatCard(
                   icon: Icons.local_shipping,
                   label: 'Vehículos Activos',
-                  value: _markers.length.toString(),
+                  value: dashboardState.activeVehiclesCount.toString(),
                   color: Colors.blue,
                 ),
                 _buildStatCard(
                   icon: Icons.speed,
                   label: 'Velocidad Promedio',
-                  value: _calculateAverageSpeed(),
+                  value:
+                      '${dashboardState.averageSpeed.toStringAsFixed(1)} km/h',
                   color: Colors.orange,
                 ),
                 _buildStatCard(
                   icon: Icons.sensors,
                   label: 'Actualizaciones',
-                  value: _latestTelemetry.length.toString(),
+                  value: dashboardState.latestTelemetry.length.toString(),
                   color: Colors.green,
                 ),
               ],
             ),
           ),
-
-          // Mapa
           Expanded(
-            child: Row(
-              children: [
-                Expanded(
-                  flex: 3,
-                  child: GoogleMap(
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final isMobile = constraints.maxWidth < 700;
+
+                // --- VISTA MÓVIL ---
+                if (isMobile) {
+                  return GoogleMap(
                     onMapCreated: (controller) => _mapController = controller,
                     initialCameraPosition: const CameraPosition(
                       target: _center,
                       zoom: 11.0,
                     ),
-                    markers: Set<Marker>.of(_markers.values),
+                    markers: markers,
                     myLocationEnabled: true,
                     myLocationButtonEnabled: true,
                     mapToolbarEnabled: true,
                     zoomControlsEnabled: true,
-                  ),
-                ),
+                  );
+                }
 
-                if (_showVehicleHistory)
-                  SizedBox(
-                    width: 350,
-                    child: VehicleHistoryCharts(
-                      telemetry: historyTelemetry,
+                // --- VISTA WEB / DESKTOP ---
+                return Row(
+                  children: [
+                    Expanded(
+                      flex: 3,
+                      child: GoogleMap(
+                        onMapCreated: (controller) =>
+                            _mapController = controller,
+                        initialCameraPosition: const CameraPosition(
+                          target: _center,
+                          zoom: 11.0,
+                        ),
+                        markers: markers,
+                        myLocationEnabled: true,
+                        myLocationButtonEnabled: true,
+                        mapToolbarEnabled: true,
+                        zoomControlsEnabled: true,
+                      ),
                     ),
-                  ),
-              ],
+                    if (dashboardState.showVehicleHistory &&
+                        dashboardState.selectedTelemetry != null)
+                      SizedBox(
+                        width: 350,
+                        child: dashboardState.isLoadingHistory
+                            ? const Center(child: CircularProgressIndicator())
+                            : VehicleDetailsPanel(
+                                telemetry: dashboardState.selectedTelemetry!,
+                                history: dashboardState.vehicleHistory,
+                              ),
+                      ),
+                  ],
+                );
+              },
             ),
           ),
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: _centerMapOnVehicles,
+        onPressed: () => _centerMapOnVehicles(markers),
         tooltip: 'Centrar en vehículos',
         child: const Icon(Icons.center_focus_strong),
       ),
+    );
+  }
+
+  Set<Marker> _buildMarkers(
+    Map<String, TelemetryModel> telemetryMap,
+    DashboardNotifier notifier,
+  ) {
+    final isMobile = MediaQuery.of(context).size.width < 700;
+
+    return telemetryMap.values.map((telemetry) {
+      return Marker(
+        markerId: MarkerId(telemetry.vehicleId),
+        position: LatLng(telemetry.latitude, telemetry.longitude),
+        icon:
+            _vehicleIcon ??
+            BitmapDescriptor.defaultMarkerWithHue(
+              _getMarkerColor(telemetry.speed),
+            ),
+        infoWindow: InfoWindow(
+          title: telemetry.vehiclePlate,
+          snippet:
+              '${telemetry.speed.toStringAsFixed(1)} km/h | ${telemetry.fuelLevel.toStringAsFixed(0)} L',
+        ),
+        onTap: () {
+          notifier.selectVehicle(telemetry);
+
+          if (isMobile) {
+            _showVehicleDetailsBottomSheet(context);
+          }
+        },
+      );
+    }).toSet();
+  }
+
+  double _getMarkerColor(double speed) {
+    if (speed < 30) return BitmapDescriptor.hueGreen;
+    if (speed < 60) return BitmapDescriptor.hueOrange;
+    return BitmapDescriptor.hueRed;
+  }
+
+  Widget _buildConnectionStatus(
+    AsyncValue<HubConnectionState> connectionState,
+  ) {
+    return connectionState.when(
+      data: (state) {
+        final isConnected = state == HubConnectionState.Connected;
+        return Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Row(
+            children: [
+              Icon(
+                isConnected ? Icons.wifi : Icons.wifi_off,
+                color: isConnected ? Colors.green : Colors.red,
+              ),
+              const SizedBox(width: 4),
+              Text(
+                isConnected ? 'En vivo' : 'Desconectado',
+                style: const TextStyle(fontSize: 12),
+              ),
+            ],
+          ),
+        );
+      },
+      loading: () => const Padding(
+        padding: EdgeInsets.all(8.0),
+        child: SizedBox(
+          width: 20,
+          height: 20,
+          child: CircularProgressIndicator(strokeWidth: 2),
+        ),
+      ),
+      error: (_, __) => const Icon(Icons.error, color: Colors.red),
     );
   }
 
@@ -275,21 +242,10 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
     );
   }
 
-  String _calculateAverageSpeed() {
-    if (_latestTelemetry.isEmpty) return '0.0';
+  void _centerMapOnVehicles(Set<Marker> markers) {
+    if (markers.isEmpty || _mapController == null) return;
 
-    final total = _latestTelemetry.values
-        .map((t) => t.speed)
-        .reduce((a, b) => a + b);
-    final avg = total / _latestTelemetry.length;
-
-    return '${avg.toStringAsFixed(1)} km/h';
-  }
-
-  void _centerMapOnVehicles() {
-    if (_markers.isEmpty || _mapController == null) return;
-
-    final positions = _markers.values.map((m) => m.position).toList();
+    final positions = markers.map((m) => m.position).toList();
 
     if (positions.length == 1) {
       _mapController!.animateCamera(
@@ -298,7 +254,6 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
       return;
     }
 
-    // Calcular bounds
     double minLat = positions.first.latitude;
     double maxLat = positions.first.latitude;
     double minLng = positions.first.longitude;
@@ -317,6 +272,63 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
     );
 
     _mapController!.animateCamera(CameraUpdate.newLatLngBounds(bounds, 50));
+  }
+
+  void _showVehicleDetailsBottomSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true, // Permite controlar la altura de la hoja
+      backgroundColor: Colors.transparent,
+      builder: (modalContext) {
+        // Usamos Consumer para escuchar los cambios de estado en tiempo real (p. ej. cuando termina de cargar el historial)
+        return Consumer(
+          builder: (context, ref, child) {
+            final dashboardState = ref.watch(dashboardNotifierProvider);
+
+            if (dashboardState.selectedTelemetry == null) {
+              return const SizedBox.shrink();
+            }
+
+            return Container(
+              height:
+                  MediaQuery.of(context).size.height *
+                  0.75, // Ocupa el 75% de la pantalla
+              decoration: BoxDecoration(
+                color: Theme.of(context).scaffoldBackgroundColor,
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(20),
+                ),
+              ),
+              child: Column(
+                children: [
+                  // Indicador visual de arrastre (Handle)
+                  const SizedBox(height: 12),
+                  Container(
+                    width: 40,
+                    height: 5,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[400],
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+
+                  // Contenido del Panel
+                  Expanded(
+                    child: dashboardState.isLoadingHistory
+                        ? const Center(child: CircularProgressIndicator())
+                        : VehicleDetailsPanel(
+                            telemetry: dashboardState.selectedTelemetry!,
+                            history: dashboardState.vehicleHistory,
+                          ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
   }
 
   @override

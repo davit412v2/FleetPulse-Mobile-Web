@@ -1,21 +1,28 @@
 import 'dart:async';
 import 'package:fleet_pulse/core/storage/secure_storage.dart';
+import 'package:fleet_pulse/features/alert/models/alert_model.dart';
 import 'package:fleet_pulse/features/telemetry/models/telemetry_model.dart';
 import 'package:signalr_netcore/signalr_client.dart';
 
 class WebSocketService {
-  static const String _hubUrl = 'http://localhost:5116/hubs/telemetry';
-  
+  static const String _hubUrl = 'http://192.168.1.152:5116/hubs/telemetry';
+
   HubConnection? _connection;
   final SecureStorage _secureStorage;
-  
+
   final _telemetryController = StreamController<TelemetryModel>.broadcast();
-  final _recentTelemetryController = StreamController<List<TelemetryModel>>.broadcast();
-  final _connectionStateController = StreamController<HubConnectionState>.broadcast();
+  final _recentTelemetryController =
+      StreamController<List<TelemetryModel>>.broadcast();
+  final _connectionStateController =
+      StreamController<HubConnectionState>.broadcast();
+  final _alertController = StreamController<AlertModel>.broadcast();
 
   Stream<TelemetryModel> get telemetryStream => _telemetryController.stream;
-  Stream<List<TelemetryModel>> get recentTelemetryStream => _recentTelemetryController.stream;
-  Stream<HubConnectionState> get connectionStateStream => _connectionStateController.stream;
+  Stream<List<TelemetryModel>> get recentTelemetryStream =>
+      _recentTelemetryController.stream;
+  Stream<HubConnectionState> get connectionStateStream =>
+      _connectionStateController.stream;
+  Stream<AlertModel> get alertStream => _alertController.stream;
 
   bool get isConnected => _connection?.state == HubConnectionState.Connected;
 
@@ -29,7 +36,7 @@ class WebSocketService {
 
     try {
       final token = await _secureStorage.getToken();
-      
+
       if (token == null) {
         print('❌ No hay token de autenticación');
         return;
@@ -62,6 +69,7 @@ class WebSocketService {
 
       _connection!.on('ReceiveTelemetry', _onTelemetryReceived);
       _connection!.on('ReceiveRecentTelemetry', _onRecentTelemetryReceived);
+      _connection!.on('ReceiveAlert', _onAlertReceived);
 
       await _connection!.start();
       _connectionStateController.add(HubConnectionState.Connected);
@@ -128,9 +136,27 @@ class WebSocketService {
           .map((json) => TelemetryModel.fromJson(json as Map<String, dynamic>))
           .toList();
       _recentTelemetryController.add(telemetryList);
-      print('📡 Telemetría reciente recibida: ${telemetryList.length} registros');
+      print(
+        '📡 Telemetría reciente recibida: ${telemetryList.length} registros',
+      );
     } catch (e) {
       print('❌ Error al procesar telemetría reciente: $e');
+    }
+  }
+
+  void _onAlertReceived(List<Object?>? arguments) {
+    if (arguments == null || arguments.isEmpty) return;
+
+    try {
+      final data = arguments.first as Map<String, dynamic>;
+
+      final alert = AlertModel.fromJson(data);
+
+      _alertController.add(alert);
+
+      print('🚨 Alerta recibida: ${alert.title}');
+    } catch (e) {
+      print('❌ Error al procesar alerta: $e');
     }
   }
 
@@ -138,6 +164,7 @@ class WebSocketService {
     _telemetryController.close();
     _recentTelemetryController.close();
     _connectionStateController.close();
+    _alertController.close();
     disconnect();
   }
 }
