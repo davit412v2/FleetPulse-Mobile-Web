@@ -5,7 +5,7 @@ class AppConstants {
   static const String apiVersion = 'v1';
   
   // WebSocket
-  //static const String wsUrl = 'ws://localhost:5000/ws';
+  static const String wsUrl = 'ws://localhost:5116/ws';
   
   // Configuración
   static const int connectionTimeout = 30000; 

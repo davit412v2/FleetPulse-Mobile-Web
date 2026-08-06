@@ -3,6 +3,7 @@ import 'package:fleet_pulse/features/master_data/presentation/pages/master_data_
 import 'package:fleet_pulse/features/telemetry/presentation/pages/telemetry_list_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:fleet_pulse/features/dashboard/presentation/pages/dashboard_page.dart';
 
 class HomePage extends ConsumerWidget {
   const HomePage({super.key});
@@ -84,6 +85,19 @@ class HomePage extends ConsumerWidget {
             ),
             const SizedBox(height: 16),
 
+            _buildMenuCard(
+              context,
+              icon: Icons.dashboard,
+              title: 'Dashboard',
+              subtitle: 'Vista general del sistema',
+              color: Colors.green,
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const DashboardPage()),
+              ),
+              isDisabled: false, // CAMBIAR DE true A false
+            ),
+
             // Opción Master Data
             _buildMenuCard(
               context,
@@ -95,18 +109,6 @@ class HomePage extends ConsumerWidget {
                 context,
                 MaterialPageRoute(builder: (_) => const MasterDataPage()),
               ),
-            ),
-
-            const SizedBox(height: 12),
-
-            _buildMenuCard(
-              context,
-              icon: Icons.dashboard,
-              title: 'Dashboard',
-              subtitle: 'Vista general del sistema',
-              color: Colors.green,
-              onTap: null, // Deshabilitado por ahora
-              isDisabled: true,
             ),
 
             const SizedBox(height: 12),
