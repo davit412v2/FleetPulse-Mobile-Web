@@ -1,5 +1,6 @@
 import 'package:fleet_pulse/features/authentication/providers/auth_provider.dart';
 import 'package:fleet_pulse/features/master_data/presentation/pages/master_data_page.dart';
+import 'package:fleet_pulse/features/telemetry/presentation/pages/telemetry_list_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -77,7 +78,6 @@ class HomePage extends ConsumerWidget {
 
             const SizedBox(height: 24),
 
-            // Sección de Menú
             Text(
               'Menú Principal',
               style: Theme.of(context).textTheme.titleLarge,
@@ -99,7 +99,6 @@ class HomePage extends ConsumerWidget {
 
             const SizedBox(height: 12),
 
-            // Opción Dashboard (Próximamente)
             _buildMenuCard(
               context,
               icon: Icons.dashboard,
@@ -112,15 +111,17 @@ class HomePage extends ConsumerWidget {
 
             const SizedBox(height: 12),
 
-            // Opción Telemetría (Próximamente)
             _buildMenuCard(
               context,
               icon: Icons.sensors,
               title: 'Telemetría',
               subtitle: 'Datos en tiempo real',
               color: Colors.orange,
-              onTap: null, // Deshabilitado por ahora
-              isDisabled: true,
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const TelemetryListPage()),
+              ),
+              isDisabled: false, // CAMBIAR DE true A false
             ),
           ],
         ),
@@ -171,10 +172,7 @@ class HomePage extends ConsumerWidget {
                       const SizedBox(height: 4),
                       Text(
                         isDisabled ? '$subtitle (Próximamente)' : subtitle,
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Colors.grey[600],
-                        ),
+                        style: TextStyle(fontSize: 13, color: Colors.grey[600]),
                       ),
                     ],
                   ),
