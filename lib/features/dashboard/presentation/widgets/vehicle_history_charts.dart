@@ -26,41 +26,11 @@ class VehicleHistoryCharts extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            _buildVehicleInfo(orderedTelemetry.last),
-
-            const SizedBox(height: 20),
-
-            _buildSpeedChart(orderedTelemetry),
+                   _buildSpeedChart(orderedTelemetry),
 
             const SizedBox(height: 30),
 
             _buildFuelChart(orderedTelemetry),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildVehicleInfo(TelemetryModel telemetry) {
-    return Card(
-      elevation: 2,
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          children: [
-            Text(
-              telemetry.vehiclePlate,
-              style: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 8),
-            if (telemetry.routeName != null)
-              Text(
-                telemetry.routeName!,
-                style: const TextStyle(color: Colors.grey),
-              ),
           ],
         ),
       ),

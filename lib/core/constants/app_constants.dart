@@ -1,11 +1,11 @@
 class AppConstants {
 
   // API
-  static const String baseUrl = 'http://localhost:5116/api';
+  static const String baseUrl = 'http://192.168.1.152:5116/api';
   static const String apiVersion = 'v1';
   
   // WebSocket
-  static const String wsUrl = 'ws://localhost:5116/ws';
+  static const String wsUrl = 'http://192.168.1.152:5116/hubs/telemetry';
   
   // Configuración
   static const int connectionTimeout = 30000; 
