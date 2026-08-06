@@ -1,7 +1,7 @@
 class AppConstants {
 
   // API
-  static const String baseUrl = 'http://localhost:5116';
+  static const String baseUrl = 'http://localhost:5116/api';
   static const String apiVersion = 'v1';
   
   // WebSocket
