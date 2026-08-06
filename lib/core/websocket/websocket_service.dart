@@ -1,11 +1,12 @@
 import 'dart:async';
 import 'package:fleet_pulse/core/storage/secure_storage.dart';
+import 'package:fleet_pulse/core/constants/app_constants.dart';
 import 'package:fleet_pulse/features/alert/models/alert_model.dart';
 import 'package:fleet_pulse/features/telemetry/models/telemetry_model.dart';
 import 'package:signalr_netcore/signalr_client.dart';
 
 class WebSocketService {
-  static const String _hubUrl = 'http://192.168.1.152:5116/hubs/telemetry';
+  static const String _hubUrl = AppConstants.wsUrl;
 
   HubConnection? _connection;
   final SecureStorage _secureStorage;

@@ -106,7 +106,6 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                   );
                 }
 
-                // --- VISTA WEB / DESKTOP ---
                 return Row(
                   children: [
                     Expanded(

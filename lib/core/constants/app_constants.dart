@@ -5,7 +5,7 @@ class AppConstants {
   static const String apiVersion = 'v1';
   
   // WebSocket
-  static const String wsUrl = 'ws://192.168.1.152:5116/ws';
+  static const String wsUrl = 'http://192.168.1.152:5116/hubs/telemetry';
   
   // Configuración
   static const int connectionTimeout = 30000; 

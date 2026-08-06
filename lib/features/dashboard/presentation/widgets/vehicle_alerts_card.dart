@@ -159,9 +159,6 @@ class _AlertTile extends StatelessWidget {
 
       case AlertSeverity.critical:
         return Colors.red;
-
-      default:
-        return Colors.grey;
     }
   }
 
