@@ -12,7 +12,7 @@ class AuthDatasource {
   Future<LoginResponse> login(LoginRequest request) async {
     try {
       final response = await _apiClient.dio.post(
-        '/api/Authentication/login',
+        '/Authentication/login',
         data: request.toJson(),
       );
 
