@@ -48,5 +48,3 @@ app.*.map.json
 # Freezed and other code generation related
 **/*.g.dart
 **/*.freezed.dart
-
-PROJECT_PROGRESS.md
